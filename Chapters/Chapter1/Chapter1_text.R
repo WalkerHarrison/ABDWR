@@ -1,51 +1,81 @@
-## Chapter 1
-
+####### Chapter 1 #######
 library(tidyverse)
 library(retrosheet)
-setwd("/Users/walkerharrison/Downloads/Analyzing Baseball Data With R/baseballdatabank-2017.1/core")
 
-## Section 1.2
+#setwd("/Users/walkerharrison/PROJECT_R/ABDWR/Chapters/Chapter1")
 
-Master <- read.csv("Master.csv")
-Master %>% filter(playerID == "aaronha01")
+## Section 1.2.2
+temp <- tempfile()
+download.file("http://seanlahman.com/files/database/baseballdatabank-2017.1.zip", temp)
+unzip(temp)
 
-Batting <- read.csv("Batting.csv")
-Batting %>% filter(playerID == "brocklo01") %>% View()
+## Section 1.2.3
 
-Pitching <- read.csv("Pitching.csv")
-Pitching %>% filter(playerID == "ruthba01") %>% View()
+Master <- read.csv("baseballdatabank-2017.1/core/Master.csv")
+Master %>% 
+  filter(playerID == "aaronha01")
 
-Fielding <- read.csv("Fielding.csv")
-Fielding %>% filter(playerID == "jeterde01") %>% View()
+## Section 1.2.4
+Batting <- read.csv("baseballdatabank-2017.1/core/Batting.csv")
+Batting %>% 
+  filter(playerID == "brocklo01", yearID == 1964)
+Batting %>% 
+  filter(playerID == "ruthba01")
 
-Teams <- read.csv("Teams.csv")
-Teams %>% filter(yearID == 2016) %>% View()
+Batting %>% 
+  filter(playerID == "ruthba01", yearID == 1919) %>%
+  transmute(AVG = round(H/AB, 3))
 
+## Section 1.2.5
+Pitching <- read.csv("baseballdatabank-2017.1/core/Pitching.csv")
+Pitching %>% 
+  filter(playerID == "ruthba01")
+
+## Section 1.2.6
+Fielding <- read.csv("baseballdatabank-2017.1/core/Fielding.csv")
+Fielding %>% 
+  filter(playerID == "ruthba01")
+
+Fielding %>% 
+  filter(playerID == "ruthba01",
+         POS == "OF"
+         ) %>%
+  group_by(yearID) %>%
+  summarize(RF = round((PO + A)/G, 2)) %>% 
+  pull()
+
+## Section 1.2.7
+Teams <- read.csv("baseballdatabank-2017.1/core/Teams.csv")
+Teams %>% 
+  filter(yearID == 1927,
+         teamID == "NYA")
+
+## Section 1.2.8
 Teams %>% 
   mutate(decade = floor(yearID/10)*10,
          HRpG = HR/G,
-         KpG = SO/G) %>% 
+         SOpG = SO/G) %>% 
   group_by(decade) %>% 
-  summarize(mean(HRpG*2, na.rm = T),
-            mean(KpG*2, na.rm = T)) %>% 
-  View()
+  summarize(HRpG = mean(HRpG*2, na.rm = T),
+            SOpG = mean(SOpG*2, na.rm = T))
 
 Teams %>%
   filter(lgID %in% c("AL", "NL")) %>%
   group_by(yearID, lgID) %>%
   summarize(RpG = mean(R/G)) %>%
   spread(lgID, RpG) %>%
+  filter(!is.na(AL)) %>%
   mutate(diff = AL-NL) %>%
   ggplot(aes(yearID, diff)) + geom_point()
 
+
 Pitching %>%
-  filter(yearID %in% c(1900:1910, 2000:2010)) %>%
-  mutate(decade = round(yearID, -2)) %>%
+  mutate(decade = floor(yearID/10)*10) %>%
+  filter(decade %in% c(1900, 2000)) %>%
   group_by(decade) %>%
   summarize(GS = sum(GS),
             CG = sum(CG)) %>%
-  mutate(perc.finish = CG/GS) %>%
-  View()
+  mutate(perc.finish = CG/GS)
 
 ## Section 1.3
 
